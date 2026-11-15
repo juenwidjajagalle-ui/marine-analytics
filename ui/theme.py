@@ -83,7 +83,8 @@ div[data-testid="stVerticalBlockBorderWrapper"] {{
 .mbi-kpi .v {{ color:{TEXT}; font-size:1.75rem; font-weight:700; margin:.35rem 0 .3rem 0; line-height:1.15; }}
 .mbi-kpi .c {{ color:{MUTED}; font-size:.75rem; }}
 .mbi-strip {{ background:{CARD}; border:1px solid {BORDER}; border-radius:8px; padding:.85rem 1rem;
-    display:grid; grid-template-columns: repeat(4, 1fr); gap:1rem; }}
+    display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap:1rem; }}
+.mbi-strip > div {{ min-width:0; }}
 .mbi-strip .l {{ font-size:.68rem; font-weight:600; color:{MUTED}; letter-spacing:.03em; text-transform:uppercase; }}
 .mbi-strip .v {{ font-size:.86rem; color:{TEXT}; margin-top:.25rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }}
 .mbi-note {{ color:{MUTED}; font-size:.82rem; margin:.2rem 0 1rem 0; display:flex; gap:.45rem; align-items:center; }}
@@ -127,7 +128,7 @@ div[data-testid="stVerticalBlockBorderWrapper"] {{
 div[data-baseweb="select"] > div, .stDateInput input {{ border-radius:6px; }}
 [data-testid="stDataFrame"] {{ border-radius: 6px; }}
 @media (max-width: 900px) {{
-  .mbi-strip, .mbi-comp {{ grid-template-columns: repeat(2, 1fr); }}
+  .mbi-strip, .mbi-comp {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
   .mbi-cyl {{ grid-template-columns: repeat(4, 1fr); }}
 }}
 </style>
