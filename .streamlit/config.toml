@@ -1,0 +1,24 @@
+[server]
+headless = false
+runOnSave = false
+
+[browser]
+gatherUsageStats = false
+
+[client]
+toolbarMode = "minimal"
+
+[theme]
+base = "light"
+primaryColor = "#3A6EA5"
+backgroundColor = "#F4F6F9"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#1E2A3B"
+font = "sans-serif"
+borderColor = "#E3E8EF"
+baseRadius = "6px"
+
+[theme.sidebar]
+backgroundColor = "#15284A"
+secondaryBackgroundColor = "#1F3A63"
+textColor = "#C9D4E5"
