@@ -4,3 +4,4 @@ numpy>=1.26
 plotly>=5.22
 SQLAlchemy>=2.0
 pyodbc>=5.1
+pymssql>=2.3          # fallback untuk Streamlit Cloud (Linux tanpa ODBC driver)

@@ -15,7 +15,7 @@ from typing import Iterable
 
 import pandas as pd
 from sqlalchemy import bindparam, create_engine, text
-from sqlalchemy.engine import Engine
+from sqlalchemy.engine import URL, Engine
 
 from config.settings import DatabaseSettings
 
@@ -28,20 +28,42 @@ PREFERRED_DRIVERS = (
 )
 
 
-def detect_driver(preferred: str = "auto") -> str:
-    import pyodbc
+PYMSSQL = "pymssql"
 
+
+def _pymssql_available() -> bool:
+    try:
+        import pymssql  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
+
+def detect_driver(preferred: str = "auto") -> str:
+    """Nama ODBC driver, atau "pymssql" bila tidak ada ODBC driver
+    (mis. di Streamlit Community Cloud / Linux tanpa msodbcsql)."""
     if preferred and preferred.lower() != "auto":
-        return preferred
-    installed = set(pyodbc.drivers())
+        return PYMSSQL if preferred.lower() == PYMSSQL else preferred
+    try:
+        import pyodbc
+        installed = set(pyodbc.drivers())
+    except ImportError:  # libodbc tidak terpasang
+        installed = set()
     for name in PREFERRED_DRIVERS:
         if name in installed:
             return name
+    if _pymssql_available():
+        return PYMSSQL
     raise RuntimeError(
         "Tidak ada ODBC driver SQL Server yang terpasang. Install "
-        "'ODBC Driver 18 for SQL Server' dari situs Microsoft. "
+        "'ODBC Driver 18 for SQL Server' dari situs Microsoft, atau `pip install pymssql`. "
         f"Driver terdeteksi: {sorted(installed) or 'tidak ada'}"
     )
+
+
+def _odbc_quote(value: str) -> str:
+    """Bungkus nilai dengan {} agar karakter spesial (; = + ! {}) aman di ODBC."""
+    return "{" + str(value).replace("}", "}}") + "}"
 
 
 def build_odbc_string(cfg: DatabaseSettings) -> str:
@@ -56,7 +78,7 @@ def build_odbc_string(cfg: DatabaseSettings) -> str:
     if cfg.trusted_connection:
         parts.append("Trusted_Connection=yes")
     else:
-        parts += [f"UID={cfg.username}", f"PWD={cfg.password}"]
+        parts += [f"UID={_odbc_quote(cfg.username)}", f"PWD={_odbc_quote(cfg.password)}"]
     # Driver lama "SQL Server" tidak mendukung opsi Encrypt modern
     if driver != "SQL Server":
         parts.append(f"Encrypt={'yes' if cfg.encrypt else 'no'}")
@@ -66,7 +88,27 @@ def build_odbc_string(cfg: DatabaseSettings) -> str:
     return ";".join(parts) + ";"
 
 
+def _make_pymssql_engine(cfg: DatabaseSettings) -> Engine:
+    if cfg.trusted_connection:
+        raise RuntimeError("pymssql tidak mendukung Windows Authentication; "
+                           "set trusted_connection = false dan isi username/password.")
+    host, _, port = cfg.server.partition(",")
+    url = URL.create(
+        "mssql+pymssql",
+        username=cfg.username,
+        password=cfg.password,
+        host=host.strip(),
+        port=int(port) if port.strip() else 1433,
+        database=cfg.database,
+        query={"charset": "utf8", "tds_version": "7.4"},
+    )
+    return create_engine(url, pool_pre_ping=True, future=True,
+                         connect_args={"login_timeout": cfg.timeout, "appname": "Marine BI Analytics"})
+
+
 def make_engine(cfg: DatabaseSettings) -> Engine:
+    if detect_driver(cfg.driver) == PYMSSQL:
+        return _make_pymssql_engine(cfg)
     odbc = build_odbc_string(cfg)
     url = "mssql+pyodbc:///?odbc_connect=" + urllib.parse.quote_plus(odbc)
     return create_engine(url, fast_executemany=True, pool_pre_ping=True, future=True)
