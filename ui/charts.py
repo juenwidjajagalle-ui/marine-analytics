@@ -178,3 +178,85 @@ def bar_chart(df: pd.DataFrame, x: str, y: str, label: str, color: str = theme.P
         fig.update_xaxes(tickformat=None, type="category")
     fig.update_layout(hovermode="closest")
     return fig
+
+
+# ------------------------------------------------------ environmental trend --
+# Warna kelas wind rose (0–3, 4–5, 6–7, ≥8): biru muda -> biru -> kuning -> merah
+ROSE_COLORS = ["#A9C3E0", theme.PRIMARY, theme.WARN_FG, theme.BAD_FG]
+
+
+def wind_rose(table: pd.DataFrame, classes: list[str], directions: list[str], height: int = 340) -> go.Figure:
+    """Polar bar bertumpuk: 16 sektor arah x kelas Beaufort, panjang = jumlah laporan.
+
+    table: kolom direction, beaufort, reports (lengkap untuk semua kombinasi)."""
+    fig = go.Figure()
+    for cls, color in zip(classes, ROSE_COLORS):
+        t = table[table["beaufort"] == cls].set_index("direction").reindex(directions)
+        fig.add_trace(go.Barpolar(
+            r=t["reports"].fillna(0), theta=directions, name=cls, marker_color=color,
+            marker_line=dict(color="#FFFFFF", width=0.6),
+            hovertemplate="%{theta} · " + cls + "<br>%{r:,} reports<extra></extra>"))
+    fig.update_layout(   # tanpa _base(): grafik polar tidak punya sumbu x/y kartesius
+        height=height, hovermode="closest", margin=dict(l=30, r=30, t=36, b=20),
+        paper_bgcolor="rgba(0,0,0,0)", font=dict(family=theme.FONT, size=11, color=theme.MUTED),
+        legend=dict(orientation="h", yanchor="bottom", y=1.04, xanchor="left", x=0,
+                    font=dict(size=10), bgcolor="rgba(0,0,0,0)"),
+        hoverlabel=dict(font_size=11, font_family=theme.FONT),
+        polar=dict(
+            bgcolor="rgba(0,0,0,0)",
+            angularaxis=dict(direction="clockwise", rotation=90, type="category",
+                             categoryorder="array", categoryarray=directions,
+                             linecolor=theme.BORDER, gridcolor=theme.GRID, tickfont=dict(size=10)),
+            radialaxis=dict(gridcolor=theme.GRID, linecolor=theme.BORDER, tickfont=dict(size=9),
+                            angle=90, tickangle=90, title=dict(text="reports", font=dict(size=9))),
+        ))
+    return fig
+
+
+def force_anomaly_bar(df: pd.DataFrame, x: str = "REPORT_DATE", height: int = 280) -> go.Figure:
+    """Bar FORCE per tanggal + penanda merah di atas bar pada tanggal laporan anomali.
+
+    df: kolom x, FORCE, is_anomaly, anomaly_reports, ANOMALY_CYLINDERS."""
+    fig = go.Figure(go.Bar(
+        x=df[x], y=df["FORCE"], name="FORCE", marker_color=theme.PRIMARY_LIGHT,
+        hovertemplate="%{x|%d %b %Y}<br>Force %{y:.1f} Bft<extra></extra>"))
+    a = df[df["is_anomaly"]]
+    if len(a):
+        fig.add_trace(go.Scatter(
+            x=a[x], y=a["FORCE"].fillna(0) + 0.8, name=f"Thermal anomaly ({len(a)})", mode="markers",
+            marker=dict(color=theme.BAD_FG, size=8, symbol="triangle-down"),
+            customdata=a[["anomaly_reports", "ANOMALY_CYLINDERS"]].to_numpy(),
+            hovertemplate=("%{x|%d %b %Y}<br><b>ANOMALY</b> · %{customdata[0]:.0f} report(s), "
+                           "%{customdata[1]:.0f} cylinder(s)<extra></extra>")))
+    fig = _base(fig, height, "Force (Beaufort)")
+    top = pd.to_numeric(df["FORCE"], errors="coerce").max()
+    fig.update_yaxes(range=[0, max(13.5, (0 if pd.isna(top) else top) + 1.5)], dtick=2)
+    fig.update_layout(hovermode="closest", bargap=0.25)
+    return fig
+
+
+def force_vs_consumption(df: pd.DataFrame, anomaly_value: str, speed_label: str,
+                         height: int = 280) -> go.Figure:
+    """Scatter FORCE (x) vs konsumsi ME total (y), warna = laporan anomali vs lainnya.
+
+    df: kolom FORCE, ME_TOTAL_CONS, REPORT_DATE, OPERATIONAL_SPEED, VESSEL_NAME, Anomaly_Status."""
+    fig = go.Figure()
+    is_anom = df["Anomaly_Status"] == anomaly_value
+    groups = [(~is_anom, "Other reports (normal / not scored)", theme.PRIMARY, 0.55),
+              (is_anom, f"Thermal anomaly ({int(is_anom.sum())})", theme.BAD_FG, 0.9)]
+    for mask, name, color, opacity in groups:
+        d = df[mask]
+        if d.empty:
+            continue
+        custom = list(zip(d["REPORT_DATE"].dt.strftime("%d %b %Y %H:%M"), d["VESSEL_NAME"].fillna("—"),
+                          d["OPERATIONAL_SPEED"].map(lambda v: "—" if pd.isna(v) else f"{v:.1f} kn")))
+        fig.add_trace(go.Scatter(
+            x=d["FORCE"], y=d["ME_TOTAL_CONS"], mode="markers", name=name, customdata=custom,
+            marker=dict(color=color, size=7, opacity=opacity, line=dict(color="#FFFFFF", width=0.5)),
+            hovertemplate=("%{customdata[0]} · %{customdata[1]}<br>Force %{x:g} Bft<br>"
+                           + speed_label + " %{customdata[2]}<br>ME consumption %{y:.2f} MT<extra></extra>")))
+    fig = _base(fig, height, "ME consumption (MT)")
+    fig.update_xaxes(tickformat=None, showgrid=True, gridcolor=theme.GRID, dtick=1,
+                     title=dict(text="Force (Beaufort)", font=dict(size=10)))
+    fig.update_layout(hovermode="closest")
+    return fig

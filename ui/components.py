@@ -74,6 +74,60 @@ def cylinder_tiles(values: list, statuses: list[str] | None = None) -> None:
     md(f'<div class="mbi-cyl">{"".join(cells)}</div>')
 
 
+def _compass_svg(deg: float | None) -> str:
+    """Kompas kecil; panah menunjuk sudut `deg` (N = 0°, searah jarum jam). None = tanpa panah."""
+    ticks = "".join(
+        f'<line x1="22" y1="3.5" x2="22" y2="{7 if a % 90 == 0 else 5.5}" transform="rotate({a} 22 22)" />'
+        for a in range(0, 360, 45))
+    arrow = ("" if deg is None else
+             f'<g transform="rotate({deg:g} 22 22)"><polygon points="22,7 26.5,22 22,19 17.5,22" class="hd"/>'
+             '<line x1="22" y1="20" x2="22" y2="34" class="tl"/></g>')
+    return (f'<svg viewBox="0 0 44 44" width="44" height="44" aria-hidden="true">'
+            f'<circle cx="22" cy="22" r="19.5" class="ring"/><g class="tk">{ticks}</g>'
+            f'<text x="22" y="15.5" class="nl">N</text>{arrow}</svg>')
+
+
+def env_tiles(wind_direction, force, air_temp, sea_temp) -> None:
+    """4 stat tile kondisi lingkungan untuk 1 laporan. Nilai kosong -> "—" (tidak error)."""
+    from analytics import environment as env   # import lokal: ui tetap ringan saat diimpor
+
+    # --- arah angin
+    norm = env.normalize_one(wind_direction)
+    deg = env.DIRECTION_DEG.get(norm) if norm else None
+    if norm is None:
+        dir_txt, dir_sub = "—", "not reported"
+    elif deg is None:
+        dir_txt, dir_sub = "—", f"unrecognised: {txt(wind_direction)}"
+    else:
+        dir_txt, dir_sub = norm, f"{deg:g}° from north"
+
+    # --- force (Beaufort)
+    lvl = env.beaufort_level(force)
+    sev = env.beaufort_severity(force)
+    force_txt = "—" if force is None or pd.isna(force) else f"{force:g}"
+    segs = "".join(f'<i class="{sev if lvl is not None and i <= lvl else ""}"></i>' for i in range(13))
+
+    # --- suhu
+    def _t(v) -> str:
+        return "—" if v is None or pd.isna(v) else f"{v:.1f}"
+    has_both = not (air_temp is None or pd.isna(air_temp) or sea_temp is None or pd.isna(sea_temp))
+    delta = f"Δ air − sea {air_temp - sea_temp:+.1f} °C" if has_both else "Δ air − sea —"
+
+    md(f"""<div class="mbi-env"><div class="g">
+      <div class="tile"><div class="l">Wind direction</div>
+        <div class="row">{_compass_svg(deg)}<div><div class="v">{_e(dir_txt)}</div>
+        <div class="c">{_e(dir_sub)}</div></div></div></div>
+      <div class="tile"><div class="l">Force · Beaufort</div>
+        <div class="v">{_e(force_txt)}<span class="u">/ 12</span></div>
+        <div class="bft" title="Beaufort 0–12">{segs}</div>
+        <div class="c">{_e(env.beaufort_desc(force))}</div></div>
+      <div class="tile"><div class="l">Air temperature</div>
+        <div class="v">{_t(air_temp)}<span class="u">°C</span></div><div class="c">{_e(delta)}</div></div>
+      <div class="tile"><div class="l">Sea temperature</div>
+        <div class="v">{_t(sea_temp)}<span class="u">°C</span></div><div class="c">{_e(delta)}</div></div>
+    </div></div>""")
+
+
 def completeness_grid(rows: pd.DataFrame) -> None:
     cells = []
     for _, r in rows.iterrows():

@@ -197,6 +197,31 @@ def test_voyage_number_column_detection():
     assert v2.loc[0, "Voyage_No"] is None
 
 
+def test_environment_helpers():
+    from analytics import environment as env
+    s = pd.Series([" nne ", "N", "sw", "North East", "xyz", None, "", "NNW"])
+    assert env.normalize_direction(s).tolist() == ["NNE", "N", "SW", "NE", env.UNKNOWN, None, None, "NNW"]
+    assert env.direction_deg("NNE") == 22.5 and env.direction_deg("w") == 270 and env.direction_deg("?") is None
+    assert env.beaufort_desc(3) == "Gentle breeze" and env.beaufort_desc(None) == "—"
+    assert [env.beaufort_severity(v) for v in (0, 4, 5, 7, 8, 12, None)] == ["ok", "ok", "warn", "warn",
+                                                                            "bad", "bad", ""]
+    df = pd.DataFrame({"WIND_DIRECTION": ["N", "n ", "NE", "BAD", None, "E"],
+                       "FORCE": [2, 9, 5, 4, 3, None]})
+    table, excl = env.wind_rose_table(df)
+    assert len(table) == 16 * 4 and table["reports"].sum() == 3
+    get = table.set_index(["direction", "beaufort"])["reports"]
+    assert get[("N", "Bft 0–3")] == 1 and get[("N", "Bft ≥8")] == 1 and get[("NE", "Bft 4–5")] == 1
+    assert excl == {"missing_direction": 1, "unknown_direction": 1, "missing_force": 1, "used": 3}
+    rep = pd.DataFrame({"REPORT_DATE": pd.to_datetime(["2026-01-01 12:00", "2026-01-01 13:00", "2026-01-02 12:00"]),
+                        "AIR_TEMPERATURE": [30.0, 32.0, None], "SEA_TEMPERATURE": [28.0, 28.0, 27.0],
+                        "FORCE": [3.0, 5.0, None], "Anomaly_Status": ["NORMAL", ANOMALY, NOT_VALID],
+                        "ANOMALY_CYLINDERS": [0, 2, None]})
+    daily = env.daily_environment(rep, ANOMALY, multi=True)
+    assert len(daily) == 2 and daily.loc[0, "AIR_TEMPERATURE"] == 31.0 and daily.loc[0, "FORCE"] == 4.0
+    assert daily["is_anomaly"].tolist() == [True, False] and daily.loc[0, "ANOMALY_CYLINDERS"] == 2
+    assert env.daily_environment(rep, ANOMALY, multi=False)["is_anomaly"].tolist() == [False, True, False]
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):

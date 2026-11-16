@@ -16,6 +16,7 @@ GRID = "#E9EDF2"
 OK_BG, OK_FG = "#E7F4EC", "#1E7A46"
 BAD_BG, BAD_FG = "#FCEBE7", "#C2410C"
 NA_BG, NA_FG = "#EEF1F4", "#5E6B7C"
+WARN_FG = "#D4A017"   # kuning skala Beaufort 5–7
 HIGHLIGHT = "#EAF2FB"
 
 # 8 warna silinder: biru/teal/abu (senada dengan desain), cukup terbedakan
@@ -105,6 +106,30 @@ div[data-testid="stVerticalBlockBorderWrapper"] {{
 .mbi-cyl .t {{ font-size:1.35rem; font-weight:700; color:{TEXT}; }}
 .mbi-cyl div.bad {{ background:{BAD_BG}; }} .mbi-cyl div.bad .t {{ color:{BAD_FG}; }}
 .mbi-cyl div.na .t {{ color:#A6B0BE; }}
+
+/* kondisi lingkungan: 4 tile, 2x2 bila kartu sempit (container query) */
+.mbi-env {{ container-type:inline-size; }}
+.mbi-env .g {{ display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:.5rem; }}
+@container (min-width: 640px) {{ .mbi-env .g {{ grid-template-columns: repeat(4, minmax(0, 1fr)); }} }}
+.mbi-env .tile {{ background:#F1F4F8; border-radius:7px; padding:.6rem .75rem; min-width:0; }}
+.mbi-env .l {{ font-size:.68rem; font-weight:600; color:{MUTED}; letter-spacing:.03em; text-transform:uppercase; }}
+.mbi-env .v {{ font-size:1.5rem; font-weight:700; color:{TEXT}; line-height:1.15; margin-top:.25rem; }}
+.mbi-env .u {{ font-size:.78rem; font-weight:500; color:{MUTED}; margin-left:.25rem; }}
+.mbi-env .c {{ font-size:.72rem; color:{MUTED}; margin-top:.2rem; overflow:hidden; text-overflow:ellipsis;
+    white-space:nowrap; }}
+.mbi-env .row {{ display:flex; gap:.55rem; align-items:center; margin-top:.2rem; }}
+.mbi-env .row .v {{ margin-top:0; }}
+.mbi-env svg {{ flex:none; }}
+.mbi-env svg .ring {{ fill:#FFFFFF; stroke:#C9D3DF; stroke-width:1.2; }}
+.mbi-env svg .tk line {{ stroke:#A6B0BE; stroke-width:1.2; }}
+.mbi-env svg .nl {{ font-size:6.5px; font-weight:700; fill:{MUTED}; text-anchor:middle; }}
+.mbi-env svg .hd {{ fill:{PRIMARY}; }}
+.mbi-env svg .tl {{ stroke:{PRIMARY}; stroke-width:2; stroke-linecap:round; }}
+.mbi-env .bft {{ display:flex; gap:2px; margin-top:.4rem; }}
+.mbi-env .bft i {{ flex:1; height:6px; border-radius:2px; background:#DCE2EA; }}
+.mbi-env .bft i.ok {{ background:{OK_FG}; }}
+.mbi-env .bft i.warn {{ background:{WARN_FG}; }}
+.mbi-env .bft i.bad {{ background:{BAD_FG}; }}
 
 .mbi-badge {{ display:inline-block; padding:.18rem .5rem; border-radius:4px; font-size:.68rem; font-weight:700;
     letter-spacing:.03em; }}
