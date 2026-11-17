@@ -94,19 +94,19 @@ cyl = data.cylinder_for_report(sel_key)
 statuses = (cyl.set_index("Cylinder_No")["ANOMALY_STATUS"].reindex(range(1, 9)).fillna("").tolist()
             if len(cyl) else None)
 
-t1, t2 = st.columns([1.55, 1])
-with t1, st.container(border=True):
-    egt_vals = [rep[c] for c in EGT_COLS]
-    n_ok = sum(pd.notna(v) for v in egt_vals)
-    ui.card_title("Main engine thermal condition",
-                  f"{rep['REPORT_DATE']:%d %b %Y} · {rep['Voyage_Label']}", badge="EXH_TEMP_CYL1–8 · °C")
-    ui.cylinder_tiles(egt_vals, statuses)
-    ui.foot(f"Reported exhaust gas temperatures · {n_ok} of 8 cylinders valid · median "
-            f"{ui.fmt_num(rep['MEDIAN_EGT'], 1)} °C · report status: {ui.txt(rep['Anomaly_Status'])}")
-with t2, st.container(border=True):
-    ui.card_title("Environmental conditions", f"{rep['REPORT_DATE']:%d %b %Y} · selected report")
-    ui.env_tiles(rep["WIND_DIRECTION"], rep["FORCE"], rep["AIR_TEMPERATURE"], rep["SEA_TEMPERATURE"])
-st.write("")
+# t1, t2 = st.columns([1.55, 1])
+# with t1, st.container(border=True):
+#     egt_vals = [rep[c] for c in EGT_COLS]
+#     n_ok = sum(pd.notna(v) for v in egt_vals)
+#     ui.card_title("Main engine thermal condition",
+#                   f"{rep['REPORT_DATE']:%d %b %Y} · {rep['Voyage_Label']}", badge="EXH_TEMP_CYL1–8 · °C")
+#     ui.cylinder_tiles(egt_vals, statuses)
+#     ui.foot(f"Reported exhaust gas temperatures · {n_ok} of 8 cylinders valid · median "
+#             f"{ui.fmt_num(rep['MEDIAN_EGT'], 1)} °C · report status: {ui.txt(rep['Anomaly_Status'])}")
+# with t2, st.container(border=True):
+#     ui.card_title("Environmental conditions", f"{rep['REPORT_DATE']:%d %b %Y} · selected report")
+#     ui.env_tiles(rep["WIND_DIRECTION"], rep["FORCE"], rep["AIR_TEMPERATURE"], rep["SEA_TEMPERATURE"])
+# st.write("")
 
 # ------------------------------------------------------- environmental trend --
 # Memakai `df` yang sama (1 query per filter, sudah di-cache) - tidak ada query tambahan per chart.
