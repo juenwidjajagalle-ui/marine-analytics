@@ -52,13 +52,15 @@ st.write("")
 
 # ------------------------------------------------------------------ charts --
 if multi:
-    series_df = (df.assign(_d=df["REPORT_DATE"].dt.normalize())
+    series_df = (df.assign(_d=df["REPORT_DATE"].dt.to_period("W").dt.start_time)
                  .groupby("_d", as_index=False)[["OPERATIONAL_SPEED", "RPM", "ME_MFO_CONS", "ME_MDO_CONS", "ME_TOTAL_CONS"]].mean()
                  .rename(columns={"_d": "REPORT_DATE"}))
     sub = f"Daily mean across {n_vessels} vessels"
 else:
-    series_df = df.sort_values("REPORT_DATE")
-    sub = "Daily observations"
+     series_df = (df.assign(_week=df["REPORT_DATE"].dt.to_period("W").dt.start_time)
+                 .groupby("_week", as_index=False)[["OPERATIONAL_SPEED", "RPM", "ME_MFO_CONS", "ME_MDO_CONS", "ME_TOTAL_CONS"]].mean()
+                 .rename(columns={"_week": "REPORT_DATE"}))
+    sub = "Weekly mean observations"
 
 c1, c2, c3 = st.columns(3)
 with c1, st.container(border=True):
@@ -193,7 +195,7 @@ with st.container(border=True):
     st.dataframe(
         view[cols], hide_index=True, width="stretch", height=380,
         column_config={
-            "REPORT_DATE": st.column_config.DatetimeColumn("REPORT_DATE", format="YYYY-MM-DD"),
+            "REPORT_DATE": st.column_config.DatetimeColumn("REPORT_DATE", format="YYYY-MM-DD HH:mm"),
             "VESSEL_NAME": "Vessel", "Voyage_Label": "Voyage",
             "NEXT_PORT": st.column_config.TextColumn("NEXT_PORT"),
             "OPERATIONAL_SPEED": st.column_config.NumberColumn(f"{data.speed_col()} (knots)", format="%.2f"),
@@ -203,6 +205,7 @@ with st.container(border=True):
             "ME_MFO_CONS": st.column_config.NumberColumn("ME_MFO_CONS (MT)", format="%.2f"),
             "ME_MDO_CONS": st.column_config.NumberColumn("ME_MDO_CONS (MT)", format="%.2f"),
             "Anomaly_Status": "Thermal status",
+
         })
     st.download_button("Download CSV", df.to_csv(index=False).encode("utf-8"),
                        file_name="noon_reports.csv", mime="text/csv", icon=":material/download:")
