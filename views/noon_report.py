@@ -193,7 +193,7 @@ with st.container(border=True):
     st.dataframe(
         view[cols], hide_index=True, width="stretch", height=380,
         column_config={
-            "REPORT_DATE": st.column_config.DatetimeColumn("REPORT_DATE", format="YYYY-MM-DD HH:mm"),
+            "REPORT_DATE": st.column_config.DatetimeColumn("REPORT_DATE", format="YYYY-MM-DD"),
             "VESSEL_NAME": "Vessel", "Voyage_Label": "Voyage",
             "NEXT_PORT": st.column_config.TextColumn("NEXT_PORT"),
             "OPERATIONAL_SPEED": st.column_config.NumberColumn(f"{data.speed_col()} (knots)", format="%.2f"),
