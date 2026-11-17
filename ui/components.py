@@ -124,7 +124,7 @@ def env_tiles(wind_direction, force, air_temp, sea_temp) -> None:
       <div class="tile"><div class="l">Air temperature</div>
         <div class="v">{_t(air_temp)}<span class="u">°C</span></div><div class="c">{_e(delta)}</div></div>
       <div class="tile"><div class="l">Sea temperature</div>
-        <div class="v">{_t(sea_temp)}<span class="u">°C</span></div><div class="c">{_e(delta)}</div></div>
+        <div class="v">{_t(sea_temp)}<span class="u">°C</span></div></div>
     </div></div>""")
 
 

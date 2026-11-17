@@ -106,8 +106,6 @@ with t1, st.container(border=True):
 with t2, st.container(border=True):
     ui.card_title("Environmental conditions", f"{rep['REPORT_DATE']:%d %b %Y} · selected report")
     ui.env_tiles(rep["WIND_DIRECTION"], rep["FORCE"], rep["AIR_TEMPERATURE"], rep["SEA_TEMPERATURE"])
-    ui.foot(f"SWELL_HEIGHT {ui.fmt_num(rep['SWELL_HEIGHT'], 1)} · temperatures parsed from text values "
-            "such as '31° C' · Beaufort bar: green 0–4, yellow 5–7, red 8–12.")
 st.write("")
 
 # ------------------------------------------------------- environmental trend --
