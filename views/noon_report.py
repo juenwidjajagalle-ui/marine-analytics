@@ -52,15 +52,13 @@ st.write("")
 
 # ------------------------------------------------------------------ charts --
 if multi:
-    series_df = (df.assign(_week=df["REPORT_DATE"].dt.to_period("W").dt.start_time)
-                 .groupby("_week", as_index=False)[["OPERATIONAL_SPEED", "RPM", "ME_MFO_CONS", "ME_MDO_CONS", "ME_TOTAL_CONS"]].mean()
-                 .rename(columns={"_week": "REPORT_DATE"}))
-    sub = f"Weekly mean across {n_vessels} vessels"
+    series_df = (df.assign(_d=df["REPORT_DATE"].dt.normalize())
+                 .groupby("_d", as_index=False)[["OPERATIONAL_SPEED", "RPM", "ME_MFO_CONS", "ME_MDO_CONS", "ME_TOTAL_CONS"]].mean()
+                 .rename(columns={"_d": "REPORT_DATE"}))
+    sub = f"Daily mean across {n_vessels} vessels"
 else:
-    series_df = (df.assign(_week=df["REPORT_DATE"].dt.to_period("W").dt.start_time)
-                 .groupby("_week", as_index=False)[["OPERATIONAL_SPEED", "RPM", "ME_MFO_CONS", "ME_MDO_CONS", "ME_TOTAL_CONS"]].mean()
-                 .rename(columns={"_week": "REPORT_DATE"}))
-    sub = "Weekly mean observations"
+    series_df = df.sort_values("REPORT_DATE")
+    sub = "Daily observations"
 
 c1, c2, c3 = st.columns(3)
 with c1, st.container(border=True):
